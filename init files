@@ -1,0 +1,4 @@
+touch /home/claude/forex_ict_bot/utils/__init__.py \
+      /home/claude/forex_ict_bot/strategies/__init__.py \
+      /home/claude/forex_ict_bot/signals/__init__.py \
+      /home/claude/forex_ict_bot/backtest/__init__.py
