@@ -1,0 +1,21 @@
+# ─── Core dependencies ────────────────────────────────────────────────────────
+pandas>=2.0.0
+numpy>=1.24.0
+requests>=2.31.0
+pytz>=2023.3
+
+# ─── Price data (default backend) ────────────────────────────────────────────
+yfinance>=0.2.36
+
+# ─── Optional: MetaTrader 5 backend (Windows only) ───────────────────────────
+# MetaTrader5>=5.0.45
+
+# ─── Optional: Telegram integration ──────────────────────────────────────────
+# python-telegram-bot>=20.0
+
+# ─── Optional: Chart export ───────────────────────────────────────────────────
+# matplotlib>=3.7.0
+# mplfinance>=0.12.9
+
+# ─── Dev / testing ────────────────────────────────────────────────────────────
+# pytest>=7.4.0
