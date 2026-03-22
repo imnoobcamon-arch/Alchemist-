@@ -1,0 +1,194 @@
+"""
+main.py — ICT Forex Analysis Bot
+──────────────────────────────────
+Entry point. Run with:
+
+  python main.py              → single analysis pass
+  python main.py --loop       → run every N minutes (live mode)
+  python main.py --backtest   → walk-forward backtest
+  python main.py --demo       → generate a demo signal (no live data needed)
+"""
+
+import argparse
+import logging
+import sys
+import time
+from pathlib import Path
+
+# ─── Logging setup (must happen before any local imports) ────────────────────
+import config
+from utils.logger import setup_logging
+
+setup_logging()
+logger = logging.getLogger(__name__)
+
+# ─── Local imports ────────────────────────────────────────────────────────────
+from data.fetcher        import fetch_all_timeframes
+from strategies.ict_strategy import analyse
+from signals.signal_generator import publish
+from utils.sessions      import get_session_status, log_session_info
+
+
+# ─── Demo mode ───────────────────────────────────────────────────────────────
+
+def run_demo() -> None:
+    """
+    Generate a hard-coded example signal to demonstrate output format.
+    No live data required — good for testing the display logic.
+    """
+    from strategies.ict_strategy import TradeSetup
+
+    demo = TradeSetup(
+        pair         = "EURUSD",
+        direction    = "BUY",
+        entry_price  = 1.08450,
+        stop_loss    = 1.08120,
+        take_profit  = 1.09110,
+        risk_reward  = 2.0,
+        setup_time   = "2024-11-01 10:30 UTC+3",
+        session      = "London",
+        killzone     = "London_Open",
+        confidence   = 82,
+
+        htf_bias         = "BULLISH",
+        liquidity_swept  = "SSL sweep at 1.08150: wick 1.08120 < pool 1.08155 [CLOSE BACK ✓]",
+        structure_event  = "Bullish MSS: after bearish leg, close 1.08430 broke above prior high 1.08400",
+        point_of_interest= "Bullish OB [1.08200–1.08380] at 2024-11-01 08:00 | impulse 2.3× ATR",
+
+        reasoning = (
+            "D1 is bullish → looking for BUYs. "
+            "Sell-side liquidity swept at 1.08120 during Asian session, closed back above. "
+            "Bullish MSS confirmed on H1 at 1.08430. "
+            "Price retesting bullish OB [1.08200–1.08380] confluence with H1 FVG. "
+            "5M bullish engulfing candle at 1.08450 during London Open Kill Zone. "
+            "Entry 1.08450 | SL 1.08120 | TP 1.09110 | RR 2.0."
+        ),
+
+        risk_pips    = 33.0,
+        reward_pips  = 66.0,
+        position_size_lots = 0.30,
+
+        asian_range  = {"high": 1.08610, "low": 1.08310, "mid": 1.08460,
+                        "size_pips": 30.0, "formed": True},
+        prev_day_high= 1.08850,
+        prev_day_low = 1.07990,
+    )
+
+    print("\n" + "═" * 50)
+    print("  DEMO MODE — Example Signal Output")
+    print("═" * 50)
+    publish(demo)
+
+
+# ─── Single analysis pass ────────────────────────────────────────────────────
+
+def run_once() -> None:
+    """Fetch data, run strategy, publish result."""
+    logger.info("=" * 55)
+    logger.info(f"  🤖  ICT Bot — {config.PAIR_DISPLAY}  |  {config.DATA_SOURCE}")
+    logger.info("=" * 55)
+
+    status = get_session_status()
+    log_session_info(status)
+
+    if status.is_weekend:
+        print("\n📅 Weekend — Forex market is closed. No analysis.\n")
+        return
+
+    logger.info("📥 Fetching price data …")
+    data = fetch_all_timeframes()
+
+    if not data:
+        logger.error("No data fetched — check your internet connection or DATA_SOURCE config")
+        return
+
+    logger.info("🧠 Running ICT strategy engine …")
+    setup = analyse(data)
+
+    publish(setup)
+
+
+# ─── Live loop ────────────────────────────────────────────────────────────────
+
+def run_loop(interval_minutes: int = 5) -> None:
+    """Run analysis repeatedly every `interval_minutes` minutes."""
+    print(f"\n🔁  Live mode — analysing every {interval_minutes} min (Ctrl+C to stop)\n")
+    session_setup_count = {}   # track setups per session to enforce MAX_SETUPS_PER_SESSION
+
+    while True:
+        try:
+            status       = get_session_status()
+            session_key  = status.current_session or "off"
+
+            count = session_setup_count.get(session_key, 0)
+            if count >= config.MAX_SETUPS_PER_SESSION:
+                logger.info(
+                    f"🛑 Max setups ({config.MAX_SETUPS_PER_SESSION}) reached "
+                    f"for {session_key} session — waiting"
+                )
+            else:
+                data  = fetch_all_timeframes()
+                setup = analyse(data) if data else None
+
+                if setup:
+                    publish(setup)
+                    session_setup_count[session_key] = count + 1
+                else:
+                    logger.info("No setup this cycle")
+
+        except KeyboardInterrupt:
+            print("\n⛔ Stopped by user.")
+            break
+        except Exception as e:
+            logger.error(f"Loop error: {e}", exc_info=True)
+
+        logger.info(f"⏳ Sleeping {interval_minutes} min …\n")
+        time.sleep(interval_minutes * 60)
+
+
+# ─── Backtest ─────────────────────────────────────────────────────────────────
+
+def run_backtest() -> None:
+    from backtest.backtester import run_backtest as _bt, print_report
+    report = _bt(window_size=200, step_size=24, max_trades=50)
+    print_report(report)
+
+
+# ─── CLI ─────────────────────────────────────────────────────────────────────
+
+def main() -> None:
+    parser = argparse.ArgumentParser(
+        description="ICT Forex Analysis Bot — EURUSD",
+        formatter_class=argparse.RawTextHelpFormatter
+    )
+    parser.add_argument(
+        "--loop", action="store_true",
+        help="Run in live loop mode (analyse every 5 minutes)"
+    )
+    parser.add_argument(
+        "--interval", type=int, default=5,
+        help="Loop interval in minutes (default: 5)"
+    )
+    parser.add_argument(
+        "--backtest", action="store_true",
+        help="Run walk-forward backtest"
+    )
+    parser.add_argument(
+        "--demo", action="store_true",
+        help="Print a demo signal (no live data required)"
+    )
+
+    args = parser.parse_args()
+
+    if args.demo:
+        run_demo()
+    elif args.backtest:
+        run_backtest()
+    elif args.loop:
+        run_loop(interval_minutes=args.interval)
+    else:
+        run_once()
+
+
+if __name__ == "__main__":
+    main()
