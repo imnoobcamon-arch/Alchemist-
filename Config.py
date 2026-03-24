@@ -71,7 +71,7 @@ MT5_SERVER   = ""
 
 # ─── Optional Telegram Alerts ────────────────────────────────────────────────
 TELEGRAM_ENABLED = False
-TELEGRAM_TOKEN   = "8339428632:AAHF1gggoyh7MCLzVG2nQToE2yh1qtyJZIo"
+TELEGRAM_TOKEN   = "8339428632:AAHR7qWF1vkFt3GT_51WdxKjPcUD5Ddz8uU"
 TELEGRAM_CHAT_ID = "100-8406560308"
 
 # ─── Logging ──────────────────────────────────────────────────────────────────
