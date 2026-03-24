@@ -71,7 +71,7 @@ MT5_SERVER   = ""
 
 # ─── Optional Telegram Alerts ────────────────────────────────────────────────
 TELEGRAM_ENABLED = True
-TELEGRAM_TOKEN = os.environ.get("BOT_TOKEN", "")
+TELEGRAM_TOKEN   = os.environ.get("BOT_TOKEN", "")
 TELEGRAM_CHAT_ID = "8406560308"
 
 # ─── Logging ──────────────────────────────────────────────────────────────────
