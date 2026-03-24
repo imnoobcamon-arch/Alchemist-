@@ -1,4 +1,4 @@
-"""
+"""import os
 config.py — Central configuration for the ICT Forex Bot
 All settings live here. Edit this file to customize behaviour.
 """
@@ -71,7 +71,7 @@ MT5_SERVER   = ""
 
 # ─── Optional Telegram Alerts ────────────────────────────────────────────────
 TELEGRAM_ENABLED = True
-TELEGRAM_TOKEN   = "8339428632:AAHR7qWF1vkFt3GT_51WdxKjPcUD5Ddz8uU"
+TELEGRAM_TOKEN   = os.environ.get("8339428632:AAHR7qWF1vkFt3GT_51WdxKjPcUD5Ddz8uU", "")
 TELEGRAM_CHAT_ID = "100-8406560308"
 
 # ─── Logging ──────────────────────────────────────────────────────────────────
