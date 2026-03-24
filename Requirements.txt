@@ -11,7 +11,7 @@ yfinance>=0.2.36
 # MetaTrader5>=5.0.45
 
 # ─── Optional: Telegram integration ──────────────────────────────────────────
-# python-telegram-bot>=20.0
+python-telegram-bot>=20.0
 
 # ─── Optional: Chart export ───────────────────────────────────────────────────
 # matplotlib>=3.7.0
