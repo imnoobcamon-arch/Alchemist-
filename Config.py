@@ -70,7 +70,7 @@ MT5_PASSWORD = ""
 MT5_SERVER   = ""
 
 # ─── Optional Telegram Alerts ────────────────────────────────────────────────
-TELEGRAM_ENABLED = False
+TELEGRAM_ENABLED = True
 TELEGRAM_TOKEN   = "8339428632:AAHR7qWF1vkFt3GT_51WdxKjPcUD5Ddz8uU"
 TELEGRAM_CHAT_ID = "100-8406560308"
 
